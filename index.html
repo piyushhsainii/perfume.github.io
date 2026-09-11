@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>See the glow.</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        overflow-x: hidden;
+        background: #101010;
+        color: #fff;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      .site-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 3.75rem;
+        padding: 0 clamp(1.25rem, 4vw, 4rem);
+        border-bottom: 1px solid transparent;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent);
+        transition:
+          background 0.35s ease,
+          border-color 0.35s ease,
+          backdrop-filter 0.35s ease;
+      }
+      .site-header.is-scrolled {
+        background: rgba(10, 10, 10, 0.85);
+        border-color: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .site-header__brand,
+      .site-header a {
+        color: #fff;
+        text-decoration: none;
+      }
+      .site-header__brand {
+        color: #b8ff55;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+      }
+      .site-header__nav {
+        display: flex;
+        gap: clamp(1rem, 3vw, 2.5rem);
+      }
+      .site-header__nav a {
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        transition: color 0.25s ease;
+      }
+      .site-header__nav a:hover {
+        color: #b8ff55;
+      }
+      .site-header__cart {
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+      }
+      .site-header__menu{display:none;min-width:44px;min-height:44px;padding:0;border:0;background:transparent;color:#fff;font:inherit;font-size:1.2rem;cursor:pointer}
+      /* The 200vh stage gives the sticky visual enough travel to reveal Image B. */
+      .reveal-stage {
+        position: relative;
+        height: 200vh;
+      }
+      .hero-visual {
+        --reveal: 0%;
+        --scrollY: 0px;
+        --product-parallax: 0px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 34rem;
+        overflow: hidden;
+        isolation: isolate;
+        background: #171717;
+      }
+      .hero-visual::before {
+        content: "";
+        position: absolute;
+        inset: -12%;
+        z-index: -1;
+        pointer-events: none;
+        background:
+          radial-gradient(
+            circle at 78% 42%,
+            rgba(184, 255, 85, 0.12),
+            transparent 24%
+          ),
+          radial-gradient(
+            circle at 62% 75%,
+            rgba(255, 194, 102, 0.1),
+            transparent 22%
+          ),
+          linear-gradient(120deg, #101010, #202719 55%, #121212);
+        transform: translate3d(0, calc(var(--scrollY) * 0.3), 0);
+        will-change: transform;
+      }
+      /* One shared frame keeps both aligned image layers identical for the wipe. */
+      .hero-product-frame {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      .hero-visual__image {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+        background: transparent;
+        animation: hero-float 4s ease-in-out infinite;
+      }
+      .hero-visual__image--advanced {
+        clip-path: inset(0 calc(100% - var(--reveal)) 0 0);
+        z-index: 1;
+      }
+      .hero-visual:after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background:
+          linear-gradient(
+            to right,
+            rgba(0, 0, 0, 0.78) 0%,
+            rgba(0, 0, 0, 0.42) 40%,
+            rgba(0, 0, 0, 0) 72%
+          ),
+          linear-gradient(0deg, rgba(0, 0, 0, 0.48), transparent 42%);
+      }
+      @keyframes hero-float {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+        }
+        50% {
+          transform: translate3d(0, -8px, 0) rotate(0.5deg);
+        }
+      }
+      .hero-copy {
+        position: absolute;
+        z-index: 3;
+        left: clamp(1.5rem, 8vw, 8rem);
+        bottom: clamp(2rem, 13vh, 9rem);
+        max-width: 42rem;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        transform: translateY(2rem);
+        transition:
+          opacity 0.8s ease,
+          transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .hero-visual.is-visible .hero-copy {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .hero-copy__eyebrow {
+        margin: 0 0 1rem;
+        color: #b8ff55;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0;
+        max-width: 11ch;
+        font-size: clamp(3.5rem, 9vw, 9rem);
+        line-height: 0.86;
+        letter-spacing: -0.075em;
+      }
+      .hero-copy__sub {
+        max-width: 29rem;
+        margin: 1.5rem 0 0;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: clamp(1rem, 1.7vw, 1.25rem);
+        line-height: 1.45;
+      }
+      .reveal-label {
+        position: absolute;
+        right: clamp(1.5rem, 5vw, 5rem);
+        bottom: 2rem;
+        z-index: 4;
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      .reveal-progress {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 4;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .reveal-progress__bar {
+        width: var(--reveal);
+        height: 100%;
+        background: #b8ff55;
+      }
+      .scroll-hint {
+        position: absolute;
+        left: 50%;
+        bottom: 2rem;
+        z-index: 4;
+        display: grid;
+        gap: 0.45rem;
+        justify-items: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.7rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        transition: opacity 0.35s ease;
+        transform: translateX(-50%);
+      }
+      .scroll-hint:after {
+        content: "↓";
+        color: #b8ff55;
+        font-size: 1.35rem;
+        line-height: 1;
+        animation: bob 1.5s ease-in-out infinite;
+      }
+      .scroll-hint.is-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      @keyframes bob {
+        50% {
+          transform: translateY(5px);
+        }
+      }
+      .after-hero {
+        min-height: 70vh;
+        display: grid;
+        place-items: center;
+        padding: 6rem 1.5rem;
+        background: #f0f0eb;
+        color: #151515;
+      }
+      .after-hero__inner {
+        width: min(58rem, 100%);
+      }
+      .after-hero h2 {
+        margin: 0;
+        font-size: clamp(2.5rem, 6vw, 6rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+      .after-hero p {
+        max-width: 34rem;
+        margin-top: 1.5rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+      .usage-guide {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        background: #171717;
+        color: #fff;
+      }
+      .usage-visual {
+        position: sticky;
+        top: 0;
+        height: 100svh;
+        min-height: 34rem;
+        overflow: hidden;
+        align-self: start;
+        background: #252525;
+      }
+      .usage-visual__image {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+      .usage-visual__image.is-active {
+        opacity: 1;
+      }
+      .usage-visual:after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(0deg, rgba(0, 0, 0, 0.72), transparent 60%);
+        pointer-events: none;
+      }
+      .usage-visual__meta {
+        position: absolute;
+        left: clamp(1.5rem, 4vw, 4rem);
+        right: clamp(1.5rem, 4vw, 4rem);
+        bottom: 2rem;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+      }
+      .usage-visual__label {
+        font-size: 0.75rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #b8ff55;
+      }
+      .usage-visual__count {
+        font-size: clamp(2rem, 4vw, 4rem);
+        line-height: 1;
+        letter-spacing: -0.07em;
+      }
+      .usage-steps {
+        padding: 0 clamp(1.5rem, 7vw, 7rem);
+      }
+      .usage-step {
+        min-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        opacity: 0.4;
+        transform: translateY(1rem);
+        transition:
+          opacity 0.35s ease,
+          transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .usage-step.is-active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .usage-step__number {
+        margin: 0 0 1rem;
+        color: #b8ff55;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+      }
+      .usage-step h3 {
+        margin: 0;
+        font-size: clamp(3rem, 6vw, 6rem);
+        line-height: 0.9;
+        letter-spacing: -0.07em;
+      }
+      .usage-step p {
+        max-width: 28rem;
+        margin: 1.5rem 0 0;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: clamp(1rem, 1.7vw, 1.25rem);
+        line-height: 1.5;
+      }
+      .usage-dots {
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        z-index: 3;
+        display: grid;
+        gap: 0.65rem;
+        transform: translateY(-50%);
+      }
+      .usage-dot {
+        width: 0.45rem;
+        height: 0.45rem;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.35);
+        transition:
+          background 0.35s ease,
+          transform 0.35s ease;
+      }
+      .usage-dot.is-active {
+        background: #b8ff55;
+        transform: scale(1.5);
+      }
+      .section-shell {
+        padding: clamp(5rem, 10vw, 9rem) clamp(1.5rem, 5vw, 5rem);
+      }
+      .variant-section {
+        background: #f0f0eb;
+        color: #151515;
+      }
+      .section-heading {
+        max-width: 42rem;
+        margin-bottom: 3.5rem;
+      }
+      .section-kicker {
+        margin: 0 0 1rem;
+        color: #708b21;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .section-heading h2 {
+        margin: 0;
+        font-size: clamp(3rem, 7vw, 7rem);
+        line-height: 0.88;
+        letter-spacing: -0.07em;
+      }
+      .section-heading p {
+        max-width: 30rem;
+        margin: 1.5rem 0 0;
+        color: #555;
+        font-size: 1.1rem;
+        line-height: 1.5;
+      }
+      .variant-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 24px;
+        padding: 0 40px;
+        margin: 0;
+      }
+      .variant-card {
+        min-width: 0;
+        margin: 0;
+        opacity: 0;
+        transform: translateY(2rem);
+        transition:
+          opacity 0.7s ease,
+          transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+          box-shadow 0.25s ease;
+      }
+      .variant-card.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .variant-card:hover {
+        transform: translateY(-0.5rem) scale(1.03);
+        box-shadow: 0 1.5rem 3rem rgba(21, 21, 21, 0.16);
+      }
+      .variant-card__media {
+        aspect-ratio: 4/5;
+        overflow: hidden;
+        background: #ddd;
+      }
+      .variant-card__media img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+        object-position: center;
+        transition: transform 0.4s ease;
+      }
+      .variant-card:hover .variant-card__media img {
+        transform: scale(1.04);
+      }
+      .variant-card__body {
+        padding: 20px 24px 20px;
+      }
+      .variant-card h3 {
+        margin: 0 0 8px;
+        font-size: 1.25rem;
+        letter-spacing: -0.03em;
+      }
+      .variant-card p {
+        min-height: 3em;
+        margin: 0;
+        color: #666;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+      .variant-card__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-top: 18px;
+      }
+      .variant-card__price {
+        font-weight: 800;
+      }
+      .variant-card button,
+      .cta-button {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.75rem 1rem;
+        background: #151515;
+        color: #fff;
+        font: inherit;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          background 0.25s ease,
+          transform 0.25s ease;
+      }
+      .variant-card button:hover,
+      .cta-button:hover {
+        background: #708b21;
+        transform: translateY(-2px);
+      }
+      .social-section {
+        background: #171717;
+        color: #fff;
+      }
+      .social-heading {
+        text-align: center;
+        margin-inline: auto;
+      }
+      .social-stat {
+        margin: 0 0 1rem;
+        color: #b8ff55;
+        font-size: clamp(2.5rem, 6vw, 5rem);
+        font-weight: 800;
+        letter-spacing: -0.07em;
+      }
+      .social-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+      }
+      .testimonial-card {
+        padding: clamp(1.5rem, 3vw, 3rem);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        background: rgba(255, 255, 255, 0.04);
+        opacity: 0;
+        transform: translateY(2rem);
+        transition:
+          opacity 0.7s ease,
+          transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .testimonial-card.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .testimonial-card__stars {
+        color: #b8ff55;
+        letter-spacing: 0.12em;
+      }
+      .testimonial-card blockquote {
+        margin: 2rem 0 3rem;
+        font-size: clamp(1.2rem, 2vw, 1.8rem);
+        line-height: 1.25;
+        letter-spacing: -0.03em;
+      }
+      .testimonial-card cite {
+        font-style: normal;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.85rem;
+      }
+      .cta-section {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        padding: clamp(8rem, 18vw, 16rem) 1.5rem;
+        text-align: center;
+        background: linear-gradient(120deg, #171717, #31431b, #171717, #5c4a25);
+        background-size: 300% 300%;
+        animation: cta-gradient 16s ease infinite;
+      }
+      .cta-section:before {
+        content: "";
+        position: absolute;
+        inset: -35%;
+        z-index: -1;
+        background:
+          radial-gradient(
+            circle at 25% 35%,
+            rgba(184, 255, 85, 0.22),
+            transparent 22%
+          ),
+          radial-gradient(
+            circle at 75% 65%,
+            rgba(255, 214, 112, 0.14),
+            transparent 20%
+          );
+        filter: blur(28px);
+        animation: cta-drift 12s ease-in-out infinite alternate;
+      }
+      .cta-section h2 {
+        max-width: 11ch;
+        margin: 0 auto;
+        font-size: clamp(3.5rem, 9vw, 9rem);
+        line-height: 0.86;
+        letter-spacing: -0.075em;
+      }
+      .cta-section p {
+        margin: 1.5rem auto 2rem;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 1.1rem;
+      }
+      .cta-button {
+        display: inline-block;
+        padding: 1rem 1.5rem;
+        background: #b8ff55;
+        color: #151515;
+        font-size: 0.95rem;
+      }
+      .cta-button:hover {
+        background: #fff;
+      }
+      @keyframes cta-gradient {
+        0%,
+        100% {
+          background-position: 0 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+      @keyframes cta-drift {
+        to {
+          transform: translate(4%, -3%) scale(1.08);
+        }
+      }
+      @media (max-width: 1000px) {
+        .variant-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 760px) {
+        .site-header{min-height:3.5rem;padding-inline:1rem}.site-header__nav{position:absolute;top:100%;left:0;right:0;display:none;flex-direction:column;gap:0;padding:.5rem 1rem 1rem;background:rgba(10,10,10,.94);border-bottom:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px)}.site-header__nav.is-open{display:flex}.site-header__nav a{min-height:44px;display:flex;align-items:center}.site-header__cart{display:none}.site-header__menu{display:block}.hero-visual{min-height:32rem}.hero-copy{left:1.25rem;right:1.25rem;bottom:clamp(2.5rem,10vh,5rem);max-width:none}.hero-copy h1{max-width:10ch;font-size:clamp(2rem,8vw,5rem);line-height:.9}.hero-copy__sub{max-width:22rem;margin-top:1rem;font-size:1rem}
+        .variant-grid,
+        .social-grid {
+          grid-template-columns: 1fr;
+        }
+        .variant-grid {
+          padding-inline: 20px;
+        }
+        .variant-card p {
+          min-height: auto;
+        }
+      }
+      @media (max-width: 760px) {
+        .hero-product-frame {
+          inset: 0;
+          width: 100%;
+          height: 100%;
+        }
+        .hero-visual__image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center 20%;
+        }
+        .usage-guide {
+          display: block;
+        }
+        .usage-visual {
+          height: 40vh;
+          height: 40dvh;
+          min-height: 18rem;
+        }
+        .usage-steps {
+          padding: 0 1.5rem;
+        }
+        .usage-step {
+          min-height: 72vh;
+          min-height: 72dvh;
+        }
+        .usage-dots {
+          right: 1rem;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        *,
+        *:before,
+        *:after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header" data-site-header>
+      <a class="site-header__brand" href="#top">SCENT</a>
+      <nav class="site-header__nav" aria-label="Primary navigation">
+        <a href="#collection">Shop</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a class="site-header__cart" href="#cart" aria-label="Shopping cart"
+        >Cart (0)</a
+      >
+      <button class="site-header__menu" type="button" aria-label="Open menu" aria-expanded="false" data-menu-toggle>☰</button>
+    </header>
+    <main>
+      <section
+        class="reveal-stage"
+        data-reveal-stage
+        aria-label="From basic to advanced reveal"
+      >
+        <div class="hero-visual" data-hero-visual>
+          <!-- Both images should have identical dimensions/composition for a clean pixel-aligned reveal. -->
+          <div class="hero-product-frame" aria-hidden="true">
+            <img
+              class="hero-visual__image"
+              src="assets/perfume-citrus.jpg"
+              alt="Citrus perfume bottle"
+            /><img
+              class="hero-visual__image hero-visual__image--advanced"
+              src="assets/perfume-woody.jpg"
+              alt="Woody perfume bottle"
+            />
+          </div>
+          <div class="hero-copy">
+            <p class="hero-copy__eyebrow">CITRUS → WOODY</p>
+            <h1>Four scents. One bottle.</h1>
+            <p class="hero-copy__sub">Scroll to explore the collection.</p>
+          </div>
+          <div class="scroll-hint" data-scroll-hint>Scroll to reveal</div>
+          <div class="reveal-label"><span data-percent>0</span>% WOODY</div>
+          <div class="reveal-progress" aria-hidden="true">
+            <div class="reveal-progress__bar"></div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="usage-guide"
+        data-usage-guide
+        aria-label="What sets it apart"
+      >
+        <div class="usage-visual">
+          <img
+            class="usage-visual__image is-active"
+            src="assets/feature-longevity.jpg"
+            alt="12 plus hour wear feature visual"
+          />
+          <img
+            class="usage-visual__image"
+            src="assets/feature-ingredients.jpg"
+            alt="Rare and ethically sourced ingredients feature visual"
+          />
+          <img
+            class="usage-visual__image"
+            src="assets/feature-craftsmanship.jpg"
+            alt="Hand blended craftsmanship feature visual"
+          />
+          <img
+            class="usage-visual__image"
+            src="assets/feature-packaging.jpg"
+            alt="Refillable packaging feature visual"
+          />
+          <div class="usage-visual__meta">
+            <div>
+              <div class="usage-visual__label">What sets it apart</div>
+              <div class="usage-visual__count" data-step-count>01 / 04</div>
+            </div>
+          </div>
+          <div class="usage-dots" aria-label="Usage guide progress">
+            <button
+              class="usage-dot is-active"
+              aria-label="Go to Longevity"
+            ></button
+            ><button class="usage-dot" aria-label="Go to Ingredients"></button
+            ><button class="usage-dot" aria-label="Go to Craftsmanship"></button
+            ><button class="usage-dot" aria-label="Go to Packaging"></button>
+          </div>
+        </div>
+        <div class="usage-steps">
+          <article class="usage-step is-active" data-step="0">
+            <p class="usage-step__number">01 / LONGEVITY</p>
+            <h3>12+ Hour Wear</h3>
+            <p>
+              A scent that lasts from your morning coffee to your evening plans,
+              without needing to reapply.
+            </p>
+          </article>
+          <article class="usage-step" data-step="1">
+            <p class="usage-step__number">02 / INGREDIENTS</p>
+            <h3>Rare &amp; Ethically Sourced</h3>
+            <p>
+              Each note is sourced from small-batch growers, never mass-produced
+              or synthetic filler.
+            </p>
+          </article>
+          <article class="usage-step" data-step="2">
+            <p class="usage-step__number">03 / CRAFTSMANSHIP</p>
+            <h3>Hand-Blended in Small Batches</h3>
+            <p>
+              No mass production line — every bottle is blended and finished by
+              hand for consistent quality.
+            </p>
+          </article>
+          <article class="usage-step" data-step="3">
+            <p class="usage-step__number">04 / PACKAGING</p>
+            <h3>Refillable, Not Disposable</h3>
+            <p>
+              The bottle is designed to be refilled, not thrown away — better
+              for you and for the planet.
+            </p>
+          </article>
+        </div>
+      </section>
+      <!-- SECTION A: responsive variant grid; each card reveals independently on entry. -->
+      <section class="variant-section section-shell" data-variant-section>
+        <div class="section-heading">
+          <p class="section-kicker">Choose your scent</p>
+          <h2>Find your note.</h2>
+          <p>
+            Four distinct directions, made to become part of your everyday
+            ritual.
+          </p>
+        </div>
+        <div class="variant-grid">
+          <article class="variant-card" data-reveal-card>
+            <div class="variant-card__media">
+              <img
+                src="assets/variant-citrus.png"
+                alt="Citrus perfume variant"
+              />
+            </div>
+            <div class="variant-card__body">
+              <h3>Citrus</h3>
+              <p>Bright, zesty, and full of lift.</p>
+              <div class="variant-card__footer">
+                <span class="variant-card__price">$48</span
+                ><button type="button">Add to Cart</button>
+              </div>
+            </div>
+          </article>
+          <article class="variant-card" data-reveal-card>
+            <div class="variant-card__media">
+              <img src="assets/variant-woody.png" alt="Woody perfume variant" />
+            </div>
+            <div class="variant-card__body">
+              <h3>Woody</h3>
+              <p>Warm cedar with a grounded finish.</p>
+              <div class="variant-card__footer">
+                <span class="variant-card__price">$52</span
+                ><button type="button">Add to Cart</button>
+              </div>
+            </div>
+          </article>
+          <article class="variant-card" data-reveal-card>
+            <div class="variant-card__media">
+              <img
+                src="assets/variant-floral.png"
+                alt="Floral perfume variant"
+              />
+            </div>
+            <div class="variant-card__body">
+              <h3>Floral</h3>
+              <p>Soft petals with a modern edge.</p>
+              <div class="variant-card__footer">
+                <span class="variant-card__price">$50</span
+                ><button type="button">Add to Cart</button>
+              </div>
+            </div>
+          </article>
+          <article class="variant-card" data-reveal-card>
+            <div class="variant-card__media">
+              <img src="assets/variant-amber.png" alt="Amber perfume variant" />
+            </div>
+            <div class="variant-card__body">
+              <h3>Amber</h3>
+              <p>Radiant spice and smooth resin.</p>
+              <div class="variant-card__footer">
+                <span class="variant-card__price">$54</span
+                ><button type="button">Add to Cart</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <!-- SECTION B: testimonial cards fade in separately; the stat starts counting when this section enters. -->
+      <section class="social-section section-shell" data-social-section>
+        <div class="section-heading social-heading">
+          <p class="social-stat"><span data-stat>0</span>+ Happy Customers</p>
+          <h2>Loved by daily ritualists.</h2>
+        </div>
+        <div class="social-grid">
+          <article class="testimonial-card" data-testimonial>
+            <div class="testimonial-card__stars">★★★★★</div>
+            <blockquote>
+              “Citrus is the first scent I reach for every morning. It feels
+              like opening a window.”
+            </blockquote>
+            <cite>— Maya R.</cite>
+          </article>
+          <article class="testimonial-card" data-testimonial>
+            <div class="testimonial-card__stars">★★★★★</div>
+            <blockquote>
+              “Woody lasts all day without ever feeling heavy. It has become my
+              signature.”
+            </blockquote>
+            <cite>— Jordan K.</cite>
+          </article>
+          <article class="testimonial-card" data-testimonial>
+            <div class="testimonial-card__stars">★★★★★</div>
+            <blockquote>
+              “The collection makes choosing a mood feel effortless. I keep both
+              on my shelf.”
+            </blockquote>
+            <cite>— Alex T.</cite>
+          </article>
+        </div>
+      </section>
+      <!-- SECTION C: final CTA; the animated gradient provides a low-key visual finish. -->
+      <section class="cta-section" data-cta-section>
+        <h2>Ready to find your signature scent?</h2>
+        <p>Meet the collection and make your next impression unforgettable.</p>
+        <a class="cta-button" href="#collection">Shop the Collection</a>
+      </section>
+    </main>
+    <script>
+      (() => {
+        const stage = document.querySelector("[data-reveal-stage]"),
+          visual = document.querySelector("[data-hero-visual]"),
+          percent = document.querySelector("[data-percent]"),
+          hint = document.querySelector("[data-scroll-hint]");
+        if (!stage || !visual) return;
+        let targetProgress = 0,
+          smoothProgress = 0,
+          scrollFrame = 0,
+          animationFrame = 0;
+        // Progress is measured against this stage only: 0 at its top and 1 when the sticky visual releases.
+        const readScrollProgress = () => {
+          const rect = stage.getBoundingClientRect(),
+            travel = Math.max(1, stage.offsetHeight - visual.offsetHeight);
+          targetProgress = Math.max(0, Math.min(1, -rect.top / travel));
+        };
+        // Scroll schedules one read per frame, avoiding repeated layout work.
+        const onScroll = () => {
+          if (!scrollFrame)
+            scrollFrame = requestAnimationFrame(() => {
+              readScrollProgress();
+              scrollFrame = 0;
+            });
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", onScroll, { passive: true });
+        const tick = () => {
+          // Lerp adds a small premium easing lag to the reveal.
+          smoothProgress += (targetProgress - smoothProgress) * 0.12;
+          const reveal = `${(smoothProgress * 100).toFixed(2)}%`;
+          visual.style.setProperty("--reveal", reveal);
+          if (percent) percent.textContent = Math.round(smoothProgress * 100);
+          if (hint) hint.classList.toggle("is-hidden", smoothProgress > 0.025);
+          animationFrame = requestAnimationFrame(tick);
+        };
+        readScrollProgress();
+        tick();
+        // IntersectionObserver independently handles the text entrance animation.
+        const observer = new IntersectionObserver(
+          (entries) =>
+            entries.forEach((entry) =>
+              visual.classList.toggle("is-visible", entry.isIntersecting),
+            ),
+          { threshold: 0.2 },
+        );
+        observer.observe(visual);
+        // If componentized later: cancelAnimationFrame(scrollFrame/animationFrame), remove listeners, observer.disconnect().
+      })();
+
+      // SECTION A scroll trigger: stagger variant cards by 100ms as they enter.
+      (() => {
+        const cards = [...document.querySelectorAll("[data-reveal-card]")];
+        if (!cards.length) return;
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                const index = cards.indexOf(entry.target);
+                entry.target.style.transitionDelay = `${Math.max(0, index) * 100}ms`;
+                entry.target.classList.add("is-visible");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.16 },
+        );
+        cards.forEach((card) => observer.observe(card));
+      })();
+
+      // SECTION B scroll trigger: stagger testimonials and count the social-proof stat once.
+      (() => {
+        const section = document.querySelector("[data-social-section]");
+        if (!section) return;
+        const cards = [...section.querySelectorAll("[data-testimonial]")];
+        const stat = section.querySelector("[data-stat]");
+        let counted = false;
+        const cardObserver = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                const index = cards.indexOf(entry.target);
+                entry.target.style.transitionDelay = `${Math.max(0, index) * 100}ms`;
+                entry.target.classList.add("is-visible");
+                cardObserver.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.16 },
+        );
+        cards.forEach((card) => cardObserver.observe(card));
+        const statObserver = new IntersectionObserver(
+          (entries) => {
+            if (!entries[0].isIntersecting || counted || !stat) return;
+            counted = true;
+            const start = performance.now();
+            const duration = 1500;
+            const countUp = (now) => {
+              const progress = Math.min(1, (now - start) / duration);
+              const eased = 1 - Math.pow(1 - progress, 3);
+              stat.textContent = Math.floor(10000 * eased).toLocaleString();
+              if (progress < 1) requestAnimationFrame(countUp);
+            };
+            requestAnimationFrame(countUp);
+            statObserver.disconnect();
+          },
+          { threshold: 0.4 },
+        );
+        statObserver.observe(section);
+      })();
+
+      // Hero atmosphere: keep scroll work on one RAF and only update transforms.
+      (() => {
+        const hero = document.querySelector("[data-hero-visual]");
+        if (!hero) return;
+        let frame = 0;
+        const update = () => {
+          hero.style.setProperty("--scrollY", `${window.scrollY}px`);
+          // A restrained counter-motion keeps the product dimensional without
+          // competing with the existing sticky reveal progress.
+          hero.style.setProperty(
+            "--product-parallax",
+            `${Math.max(-18, Math.min(18, window.scrollY * -0.025))}px`,
+          );
+          frame = 0;
+        };
+        const onScroll = () => {
+          if (!frame) frame = requestAnimationFrame(update);
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
+        update();
+      })();
+
+      (() => {
+        const header = document.querySelector("[data-site-header]");
+        const heroStage = document.querySelector("[data-reveal-stage]");
+        if (!header) return;
+        const updateHeader = () =>
+          header.classList.toggle(
+            "is-scrolled",
+            heroStage
+              ? window.scrollY > heroStage.offsetHeight - 48
+              : window.scrollY > 24,
+          );
+        window.addEventListener("scroll", updateHeader, { passive: true });
+        updateHeader();
+      })();
+
+      (() => {
+        const toggle = document.querySelector("[data-menu-toggle]");
+        const nav = document.querySelector(".site-header__nav");
+        if (!toggle || !nav) return;
+        toggle.addEventListener("click", () => {
+          const open = nav.classList.toggle("is-open");
+          toggle.setAttribute("aria-expanded", String(open));
+          toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+          toggle.textContent = open ? "×" : "☰";
+        });
+        nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => {
+          nav.classList.remove("is-open");
+          toggle.setAttribute("aria-expanded", "false");
+          toggle.setAttribute("aria-label", "Open menu");
+          toggle.textContent = "☰";
+        }));
+      })();
+
+      (() => {
+        const guide = document.querySelector("[data-usage-guide]");
+        if (!guide) return;
+        const steps = [...guide.querySelectorAll("[data-step]")];
+        const images = [...guide.querySelectorAll(".usage-visual__image")];
+        const dots = [...guide.querySelectorAll(".usage-dot")];
+        const count = guide.querySelector("[data-step-count]");
+        let activeIndex = 0;
+
+        const activate = (index) => {
+          if (
+            index === activeIndex &&
+            images[index]?.classList.contains("is-active")
+          )
+            return;
+          activeIndex = index;
+          steps.forEach((step, i) =>
+            step.classList.toggle("is-active", i === index),
+          );
+          images.forEach((image, i) =>
+            image.classList.toggle("is-active", i === index),
+          );
+          dots.forEach((dot, i) =>
+            dot.classList.toggle("is-active", i === index),
+          );
+          if (count)
+            count.textContent = `${String(index + 1).padStart(2, "0")} / 04`;
+        };
+
+        // One observer with a centered viewport band gives every step a stable
+        // handoff point, avoiding threshold ping-pong during slow scrolling.
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const centered = entries.find((entry) => entry.isIntersecting);
+            if (centered) activate(Number(centered.target.dataset.step));
+          },
+          {
+            rootMargin: "-35% 0px -35% 0px",
+            threshold: [0, 0.25, 0.5, 0.75, 1],
+          },
+        );
+        steps.forEach((step) => observer.observe(step));
+        dots.forEach((dot, i) =>
+          dot.addEventListener("click", () =>
+            steps[i].scrollIntoView({ behavior: "smooth" }),
+          ),
+        );
+      })();
+    </script>
+  </body>
+</html>
